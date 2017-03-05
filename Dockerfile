@@ -5,7 +5,6 @@ RUN \
   groupadd jhipster && \
   useradd jhipster -s /bin/bash -m -g jhipster -G sudo && \
   echo 'jhipster:jhipster' |chpasswd && \
-  mkdir /home/jhipster/app && \
 
   # install open-jdk 8
   apt-get update && \
@@ -49,18 +48,19 @@ RUN \
 # copy sources
 COPY . /home/jhipster/generator-jhipster
 
+# When https://github.com/docker/docker/pull/28499 will be merged and released,
+# remove the following line and add "--chown jhipster:jhipster" to the previous one
 RUN \
   # fix jhipster user permissions
-  chown -R jhipster:jhipster \
-    /home/jhipster \
-    /usr/lib/node_modules && \
+  chown -R jhipster:jhipster /home/jhipster/generator-jhipster
 
+RUN \
   # install jhipster
-  rm -Rf /home/jhipster/generator-jhipster/node_modules \
+  rm -rf /home/jhipster/generator-jhipster/node_modules \
     /home/jhipster/generator-jhipster/yarn.lock \
     /home/jhipster/generator-jhipster/yarn-error.log && \
   su -c "cd /home/jhipster/generator-jhipster && yarn install" jhipster && \
-  su -c "yarn global add file:/home/jhipster/generator-jhipster" jhipster && \
+  yarn global add file:/home/jhipster/generator-jhipster && \
 
   # cleanup
   rm -rf \
@@ -69,8 +69,13 @@ RUN \
     /tmp/* \
     /var/tmp/*
 
-# expose the working directory, the Tomcat port, the BrowserSync ports
 USER jhipster
+
+RUN \
+  # create volume directory for generated application
+  mkdir /home/jhipster/app
+
+# expose the working directory, the Tomcat port, the BrowserSync ports
 ENV PATH $PATH:/usr/bin:/home/jhipster/.yarn-global/bin:/home/jhipster/.yarn/bin:/home/jhipster/.config/yarn/global/node_modules/.bin
 WORKDIR "/home/jhipster/app"
 VOLUME ["/home/jhipster/app"]
